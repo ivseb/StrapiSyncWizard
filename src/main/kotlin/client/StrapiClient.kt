@@ -18,6 +18,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
 import java.io.File
 import java.security.MessageDigest
+import java.security.cert.X509Certificate
+import javax.net.ssl.X509TrustManager
 
 
 object StrapiClientTokenCache {
@@ -63,6 +65,7 @@ class StrapiClient(
     val clientHash = calculateMD5Hash(baseUrl + apiKey + username + password)
 
     private val client = HttpClient(CIO) {
+
         install(ContentNegotiation) {
             json(JsonParser)
         }
@@ -70,6 +73,20 @@ class StrapiClient(
             level = LogLevel.INFO
         }
         expectSuccess = true
+        engine{
+            https {
+                trustManager = object : X509TrustManager{
+                    override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+                    }
+
+                    override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+                    }
+
+                    override fun getAcceptedIssuers(): Array<X509Certificate>?  = null
+
+                }
+            }
+        }
     }
 
     suspend fun getLoginToken(): StrapiLoginData {

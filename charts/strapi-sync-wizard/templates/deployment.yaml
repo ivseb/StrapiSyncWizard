@@ -8,6 +8,8 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "strapi-sync-wizard.selectorLabels" . | nindent 6 }}
@@ -64,7 +66,7 @@ spec:
                   name: {{ include "strapi-sync-wizard.fullname" . }}
                   key: database-salt
             - name: DATA_FOLDER
-              value: "{{ .Values.application.dataFolder }}"
+              value: /app/data
             - name: STRAPI_CLIENT_TIMEOUT
               value: "{{ .Values.application.strapi.clientTimeout }}"
             - name: STRAPI_CLIENT_MAX_RETRIES
@@ -89,7 +91,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: data
-              mountPath: /app/{{ .Values.application.dataFolder }}
+              mountPath: /app/data
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
