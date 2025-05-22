@@ -141,6 +141,7 @@ openshift:
   route:
     enabled: true
     host: ""
+    router:
     tls:
       enabled: true
       termination: edge
