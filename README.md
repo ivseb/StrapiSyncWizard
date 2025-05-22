@@ -1,0 +1,150 @@
+# 🔄 StrapiSync Wizard 🧙‍♂️
+
+> *Content synchronization magic for your Strapi CMS environments!*
+
+![StrapiSyncLogo png](StrapiSyncLogoImg.png)
+
+
+# StrapiSync Server
+
+StrapiSync is a synchronization tool for [Strapi CMS](https://strapi.io/) that allows you to manage and synchronize content between different Strapi instances. It provides a user-friendly interface for reviewing, selecting, and merging content changes across environments.
+
+## Features
+
+- **Instance Management**: Configure and manage multiple Strapi instances
+- **Content Synchronization**: Synchronize content between Strapi instances
+- **Merge Requests**: Create, review, and complete merge requests for content changes
+- **Diff Viewer**: Compare content differences between instances
+- **Media Management**: Synchronize media files and folders
+- **Selective Sync**: Choose which content types and entries to synchronize
+
+## Architecture
+
+StrapiSync is built with:
+
+- **Backend**: Kotlin with Ktor framework
+- **Frontend**: React with TypeScript and PrimeReact UI components
+- **Database**: PostgreSQL for storing configuration and sync state
+- **Docker**: Containerization support for easy deployment
+
+## Prerequisites
+
+- JDK 17 or higher
+- PostgreSQL database
+- Node.js and npm (for frontend development)
+- Strapi instances (v4.x) to synchronize
+
+## Configuration
+
+The application can be configured through environment variables or the `application.conf` file:
+
+### Server Configuration
+- `PORT`: HTTP port (default: 8080)
+- `HOST`: Host address (default: 0.0.0.0)
+- `DEVELOPMENT_MODE`: Enable development mode (default: true)
+
+### Database Configuration
+- `JDBC_DATABASE_URL`: JDBC URL for PostgreSQL (default: jdbc:postgresql://localhost:5432/strapisync)
+- `JDBC_DATABASE_USERNAME`: Database username (default: postgres)
+- `JDBC_DATABASE_PASSWORD`: Database password (default: postgres)
+- `JDBC_MAXIMUM_POOL_SIZE`: Maximum pool size for database connections (default: 3)
+- `DB_SALT`: Salt used for database encryption (required, no default)
+
+### Application Configuration
+- `DATA_FOLDER`: Folder for storing temporary data (default: data)
+- `STRAPI_CLIENT_TIMEOUT`: Timeout for Strapi API requests in milliseconds (default: 30000)
+- `STRAPI_CLIENT_MAX_RETRIES`: Maximum retries for Strapi API requests (default: 3)
+
+## Building and Running
+
+### Building the Application
+
+```bash
+./gradlew build
+```
+
+### Running the Application
+
+```bash
+./gradlew run
+```
+
+### Building with Docker
+
+```bash
+./gradlew jibDockerBuild
+```
+
+## Usage
+
+1. **Configure Strapi Instances**:
+   - Add your Strapi instances with their URLs and authentication details
+
+2. **Create Merge Requests**:
+   - Select source and target instances
+   - Review content differences
+   - Select content to synchronize
+
+3. **Complete Merges**:
+   - Review the selected changes
+   - Complete the merge to synchronize content
+
+## Development
+
+### Backend Development
+
+The backend is built with Kotlin and Ktor:
+
+```bash
+./gradlew run
+```
+
+### Frontend Development
+
+The frontend is built with React:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+## Technical Details
+
+### Merge Request Workflow
+
+The merge request workflow in StrapiSync involves several technical steps that interact with Strapi APIs:
+
+1. **Creation**: When a merge request is created, the system stores information about source and target Strapi instances in the database.
+
+2. **Schema Compatibility Check**: The system queries both Strapi instances via their APIs to retrieve content types and component schemas, then compares them to ensure compatibility.
+
+3. **Content Comparison**: StrapiSync fetches content from both instances using Strapi's REST API, comparing entries to identify differences. This involves:
+   - Authenticating with both Strapi instances using JWT tokens
+   - Retrieving content entries with their relationships
+   - Comparing content and identifying changes
+
+4. **Selection Process**: Users select which content to synchronize, and the system tracks these selections in the database.
+
+5. **Merge Execution**: When completing a merge request, the system:
+   - Processes files first, downloading from source and uploading to target
+   - Creates folder structures in the target if needed
+   - Processes content entries in dependency order
+   - Maintains relationships between content types
+   - Updates document mappings to track synchronized content
+
+6. **Status Updates**: Throughout the process, the merge request status is updated in the database to reflect progress.
+
+All API interactions use the Strapi REST API with proper authentication, handling pagination, and managing relationships between content types.
+
+## Project Background
+
+This project was born out of a personal itch that needed scratching! I built StrapiSync Wizard in a relatively short time to solve a specific problem I was facing with content synchronization between Strapi environments. 
+
+Is the code architecture perfect? Absolutely not! Did I follow all the best practices? Probably missed a few (or many)! But hey, it works, and that's what matters. The code might make seasoned developers cringe a bit, but it gets the job done.
+
+If you're brave enough to continue this project or want to improve it, you're more than welcome to jump in. Just remember to bring your sense of humor and a lot of patience. The codebase might be a bit... let's say "creatively organized," but it's a fun challenge for anyone who enjoys untangling spaghetti code!
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
