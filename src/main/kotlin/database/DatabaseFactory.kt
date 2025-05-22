@@ -12,7 +12,6 @@ import it.sebi.tables.MergeRequestsTable
 import it.sebi.tables.StrapiInstancesTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.MigrationUtils
@@ -20,7 +19,6 @@ import org.jetbrains.exposed.v1.migration.MigrationUtils
 fun Application.initDatabaseConnection() {
     // Connect to the database
     val database = Database.connect(hikari(this.log))
-
 
 
     // Create tables
@@ -35,7 +33,7 @@ fun Application.initDatabaseConnection() {
     }
 }
 
-private fun hikari(log:Logger): HikariDataSource {
+private fun hikari(log: Logger): HikariDataSource {
     val appConfig = HoconApplicationConfig(ConfigFactory.load())
     val dbConfig = appConfig.config("database")
 
@@ -60,7 +58,11 @@ private fun hikari(log:Logger): HikariDataSource {
 
     log.info("Connecting to database: ${config.jdbcUrl}")
     log.info("Connection username: ${config.username}")
-    log.info("Connection password: ${config.password.substring(0, 2)}************${config.password.substring(config.password.length - 2, config.password.length)}")
+    try {
+        log.info("Connection password: ${config.password.take(3)}${"*".repeat(config.password.length - 3)}")
+    } catch (_: Throwable) {
+
+    }
 
     return HikariDataSource(config)
 }
