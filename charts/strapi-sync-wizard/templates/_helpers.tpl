@@ -65,11 +65,7 @@ Create the name of the service account to use
 Return the appropriate apiVersion for deployment.
 */}}
 {{- define "strapi-sync-wizard.deployment.apiVersion" -}}
-{{- if .Values.openshift.enabled -}}
-apps.openshift.io/v1
-{{- else -}}
 apps/v1
-{{- end -}}
 {{- end -}}
 
 {{/*
