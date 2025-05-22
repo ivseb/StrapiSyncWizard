@@ -75,6 +75,38 @@ The application can be configured through environment variables or the `applicat
 ./gradlew jibDockerBuild
 ```
 
+### Docker Image
+
+A public Docker image is available and can be used directly. You can find it at the following link:
+
+[StrapiSyncWizard Docker Image](https://hub.docker.com/r/ivseb/strapi-sync-wizard)
+
+To use the Docker image:
+
+```bash
+docker pull ivseb/strapi-sync-wizard:latest
+docker run -p 8080:8080 ivseb/strapi-sync-wizard:latest
+```
+
+### Helm Chart
+
+StrapiSyncWizard can be deployed on Kubernetes using the provided Helm chart. The chart is hosted on GitHub Pages at [https://ivseb.github.io/StrapiSyncWizard](https://ivseb.github.io/StrapiSyncWizard).
+
+To use the Helm chart:
+
+```bash
+# Add the Helm repository
+helm repo add strapi-sync-wizard https://ivseb.github.io/StrapiSyncWizard
+
+# Update the repository
+helm repo update
+
+# Install the chart
+helm install my-release strapi-sync-wizard/strapi-sync-wizard
+```
+
+For more information about the Helm chart and its configuration options, see the [Helm Chart README](./charts/strapi-sync-wizard/README.md).
+
 ## Usage
 
 1. **Configure Strapi Instances**:
