@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 import io.ktor.server.config.*
+import io.ktor.util.logging.*
 import it.sebi.tables.MergeRequestDocumentMappingTable
 import it.sebi.tables.MergeRequestSelectionsTable
 import it.sebi.tables.MergeRequestsTable
@@ -18,7 +19,7 @@ import org.jetbrains.exposed.v1.migration.MigrationUtils
 
 fun Application.initDatabaseConnection() {
     // Connect to the database
-    val database = Database.connect(hikari())
+    val database = Database.connect(hikari(this.log))
 
 
 
@@ -34,7 +35,7 @@ fun Application.initDatabaseConnection() {
     }
 }
 
-private fun hikari(): HikariDataSource {
+private fun hikari(log:Logger): HikariDataSource {
     val appConfig = HoconApplicationConfig(ConfigFactory.load())
     val dbConfig = appConfig.config("database")
 
@@ -56,6 +57,11 @@ private fun hikari(): HikariDataSource {
         transactionIsolation = dbConfig.property("transactionIsolation").getString()
         validate()
     }
+
+    log.info("Connecting to database: ${config.jdbcUrl}")
+    log.info("Connection username: ${config.username}")
+    log.info("Connection password: ${config.password.substring(0, 2)}************${config.password.substring(config.password.length - 2, config.password.length)}")
+
     return HikariDataSource(config)
 }
 

@@ -23,7 +23,7 @@ kotlin {
 
 
 group = "it.sebi"
-version = "0.0.1"
+version = "0.0.2"
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
@@ -114,12 +114,6 @@ ktor {
                     8080,
                     DockerPortMappingProtocol.TCP
                 )
-            )
-        )
-        environmentVariables.set(
-            listOf(
-                DockerEnvironmentVariable("DEVELOPMENT_MODE", "false"),
-                DockerEnvironmentVariable("JDBC_DATABASE_URL", "jdbc:postgresql://10.131.12.146:5432/strapisync")
             )
         )
         externalRegistry.set(
