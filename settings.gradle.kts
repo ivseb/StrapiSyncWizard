@@ -1,1 +1,1 @@
-rootProject.name = "StrapiSyncServer"
+rootProject.name = "StrapiSyncWizard"

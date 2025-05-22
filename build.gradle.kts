@@ -21,11 +21,13 @@ kotlin {
 
 
 
+
 group = "it.sebi"
 version = "0.0.1"
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
+
 }
 
 repositories {
@@ -93,6 +95,13 @@ tasks.named("jibDockerBuild") {
     dependsOn("buildFrontend")
 }
 
+fun String.toKebabCase(): String {
+    return this.replace(Regex("([a-z])([A-Z])")) {
+        "${it.groupValues[1]}-${it.groupValues[2].lowercase()}"
+    }.lowercase()
+}
+
+
 ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
@@ -111,6 +120,13 @@ ktor {
             listOf(
                 DockerEnvironmentVariable("DEVELOPMENT_MODE", "false"),
                 DockerEnvironmentVariable("JDBC_DATABASE_URL", "jdbc:postgresql://10.131.12.146:5432/strapisync")
+            )
+        )
+        externalRegistry.set(
+            io.ktor.plugin.features.DockerImageRegistry.dockerHub(
+                appName = provider { "StrapiSyncWizard".toKebabCase() },
+                username = providers.environmentVariable("DOCKER_HUB_USERNAME"),
+                password = providers.environmentVariable("DOCKER_HUB_PASSWORD")
             )
         )
     }
