@@ -88,6 +88,7 @@ helm uninstall my-release
 | `openshift.enabled`                                 | Enable OpenShift compatibility                  | `false`         |
 | `openshift.route.enabled`                           | Create OpenShift Route                          | `true`          |
 | `openshift.route.host`                              | Route hostname                                  | `""`            |
+| `openshift.route.routerLabel`                       | Router label (defaults to "internal" if empty)  | `""`            |
 | `openshift.route.tls.enabled`                       | Enable TLS for Route                            | `true`          |
 | `openshift.route.tls.termination`                   | TLS termination type                            | `edge`          |
 | `openshift.route.tls.insecureEdgeTerminationPolicy` | Insecure edge termination policy                | `Redirect`      |

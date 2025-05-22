@@ -141,7 +141,8 @@ openshift:
   route:
     enabled: true
     host: ""
-    router:
+    # Router label, defaults to "internal" if not specified
+    routerLabel: ""
     tls:
       enabled: true
       termination: edge

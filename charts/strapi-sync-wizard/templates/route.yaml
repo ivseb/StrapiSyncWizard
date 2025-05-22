@@ -5,12 +5,8 @@ kind: Route
 metadata:
   name: {{ $fullName }}
   labels:
-    {{- if .Values.openshift.route.router}}
-    router: {{ .Values.openshift.route.router }}
-    {{- else }}
-    router: internal
-    {{- end}}
     {{- include "strapi-sync-wizard.labels" . | nindent 4 }}
+    router: {{ .Values.openshift.route.routerLabel | default "internal" }}
 spec:
   {{- if .Values.openshift.route.host }}
   host: {{ .Values.openshift.route.host }}
