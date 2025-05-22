@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  strapi-sync-wizard:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2025-05-22T09:35:21.644715+02:00"
+    description: A Helm chart for StrapiSyncWizard application
+    digest: fb25d7f028a6f6fc3a43b99ad9410d7592e35e0f2044f5d05271dff9588cf91f
+    home: https://github.com/ivseb/StrapiSyncWizard
+    keywords:
+    - strapi
+    - sync
+    - wizard
+    - ktor
+    - kotlin
+    maintainers:
+    - name: StrapiSyncWizard Team
+    name: strapi-sync-wizard
+    type: application
+    urls:
+    - https://ivseb.github.io/strapi-sync-wizard/charts/strapi-sync-wizard-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-05-22T09:35:21.644245+02:00"
