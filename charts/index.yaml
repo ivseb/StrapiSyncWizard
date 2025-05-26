@@ -3,9 +3,9 @@ entries:
   strapi-sync-wizard:
   - apiVersion: v2
     appVersion: 0.0.7
-    created: "2025-05-26T16:37:19.34387+02:00"
+    created: "2025-05-26T16:49:43.294771+02:00"
     description: A Helm chart for StrapiSyncWizard application
-    digest: 784ff8884f6ad8bd0df401b314235ea07e8e49e6fa58deb8d471f9c9ad16b6e2
+    digest: 36efb8ca1e83ae1b5757739acd4a94865c9f1c9e04b782acc853bd12181104f9
     home: https://github.com/ivseb/StrapiSyncWizard
     keywords:
     - strapi
@@ -22,7 +22,7 @@ entries:
     version: 0.2.2
   - apiVersion: v2
     appVersion: 0.0.6
-    created: "2025-05-26T16:37:19.343611+02:00"
+    created: "2025-05-26T16:49:43.294509+02:00"
     description: A Helm chart for StrapiSyncWizard application
     digest: 3561377bfe5e09be99236cdb1a75599052d251bbc868b8fa49fc487bd617f7fa
     home: https://github.com/ivseb/StrapiSyncWizard
@@ -41,7 +41,7 @@ entries:
     version: 0.2.1
   - apiVersion: v2
     appVersion: 0.0.3
-    created: "2025-05-26T16:37:19.343096+02:00"
+    created: "2025-05-26T16:49:43.293954+02:00"
     description: A Helm chart for StrapiSyncWizard application
     digest: 3c7f569d20c0b36281e95bb8c5b9615883182e9482ca2839bfcb5d754487993e
     home: https://github.com/ivseb/StrapiSyncWizard
@@ -58,4 +58,4 @@ entries:
     urls:
     - https://ivseb.github.io/strapi-sync-wizard/charts/strapi-sync-wizard-0.2.0.tgz
     version: 0.2.0
-generated: "2025-05-26T16:37:19.342408+02:00"
+generated: "2025-05-26T16:49:43.293356+02:00"
