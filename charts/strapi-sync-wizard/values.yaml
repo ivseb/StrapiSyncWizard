@@ -99,6 +99,11 @@ application:
     clientTimeout: 30000
     maxRetries: 3
 
+  # Proxy configuration
+  httpProxy: ""
+  httpsProxy: ""
+  noProxy: ""
+
 # Database configuration
 database:
   # Connection details

@@ -54,6 +54,9 @@ helm uninstall my-release
 | `application.dataFolder`            | Data folder path                                | `data`          |
 | `application.strapi.clientTimeout`  | Strapi client timeout in milliseconds           | `30000`         |
 | `application.strapi.maxRetries`     | Strapi client max retries                       | `3`             |
+| `application.httpProxy`             | HTTP proxy configuration                        | `""`            |
+| `application.httpsProxy`            | HTTPS proxy configuration                       | `""`            |
+| `application.noProxy`               | No proxy configuration                          | `""`            |
 
 ### Database parameters
 

@@ -71,6 +71,18 @@ spec:
               value: "{{ .Values.application.strapi.clientTimeout }}"
             - name: STRAPI_CLIENT_MAX_RETRIES
               value: "{{ .Values.application.strapi.maxRetries }}"
+            {{- if .Values.application.httpProxy }}
+            - name: HTTP_PROXY
+              value: "{{ .Values.application.httpProxy }}"
+            {{- end }}
+            {{- if .Values.application.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: "{{ .Values.application.httpsProxy }}"
+            {{- end }}
+            {{- if .Values.application.noProxy }}
+            - name: NO_PROXY
+              value: "{{ .Values.application.noProxy }}"
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /health

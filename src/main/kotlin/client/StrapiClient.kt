@@ -2,6 +2,7 @@ package it.sebi.client
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
@@ -17,10 +18,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
 import java.io.File
+import java.lang.System.getenv
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
-
 
 object StrapiClientTokenCache {
     private val cache = mutableMapOf<String, Pair<StrapiLoginData, Long>>()
@@ -46,6 +47,72 @@ object StrapiClientTokenCache {
 fun StrapiInstance.client(): StrapiClient = StrapiClient(this)
 
 
+private fun buildClient(proxyConfig: ProxyConfig?): HttpClient = HttpClient(CIO) {
+
+    install(ContentNegotiation) {
+        json(JsonParser)
+    }
+    install(Logging) {
+        level = LogLevel.INFO
+    }
+    expectSuccess = true
+    engine {
+        proxy = proxyConfig
+        https {
+            trustManager = object : X509TrustManager {
+                override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+                }
+
+                override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+                }
+
+                override fun getAcceptedIssuers(): Array<X509Certificate>? = null
+
+            }
+        }
+    }
+}
+
+class ClientSelector {
+
+    private val clientNoProxy = buildClient(null)
+    private val clientHttpsProxy: HttpClient?
+    private val clientHttpProxy: HttpClient?
+    private val noProxyList: List<String>?
+
+    init {
+        val httpProxy = getenv("HTTP_PROXY")
+        val httpsProxy = getenv("HTTPS_PROXY")
+        noProxyList = getenv("NO_PROXY")?.let { noProxyString -> noProxyString.split(",").map { it.trim() } }
+        clientHttpProxy = if (httpProxy != null) {
+            buildClient(ProxyBuilder.http(httpProxy))
+        } else {
+            null
+        }
+        clientHttpsProxy = if (httpsProxy != null) {
+            buildClient(ProxyBuilder.http(httpsProxy))
+        } else {
+            null
+        }
+    }
+
+    fun getClientForUrl(url: String): HttpClient {
+        val urlObj = try {
+            java.net.URL(url)
+        } catch (e: Exception) {
+            return clientHttpsProxy ?: clientNoProxy
+        }
+        val proxy by lazy { if (urlObj.protocol == "https") clientHttpsProxy else clientHttpProxy }
+
+        return if (noProxyList?.any { urlObj.host.contains(it) } == true) {
+            clientNoProxy
+        } else {
+            proxy ?: clientNoProxy
+        }
+    }
+
+}
+
 
 class StrapiClient(
     val name: String,
@@ -64,30 +131,8 @@ class StrapiClient(
 
     val clientHash = calculateMD5Hash(baseUrl + apiKey + username + password)
 
-    private val client = HttpClient(CIO) {
+    val selector = ClientSelector()
 
-        install(ContentNegotiation) {
-            json(JsonParser)
-        }
-        install(Logging) {
-            level = LogLevel.INFO
-        }
-        expectSuccess = true
-        engine{
-            https {
-                trustManager = object : X509TrustManager{
-                    override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-                    }
-
-                    override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-                    }
-
-                    override fun getAcceptedIssuers(): Array<X509Certificate>?  = null
-
-                }
-            }
-        }
-    }
 
     suspend fun getLoginToken(): StrapiLoginData {
         val now = System.currentTimeMillis()
@@ -99,7 +144,8 @@ class StrapiClient(
             }
         }
 
-        val response = client.post("$baseUrl/admin/login") {
+        val url = "$baseUrl/admin/login"
+        val response = selector.getClientForUrl(url).post(url) {
 
             setBody(buildJsonObject {
                 put("email", username)
@@ -114,7 +160,8 @@ class StrapiClient(
     }
 
     suspend fun getContentTypes(): List<StrapiContentType> {
-        val response: ContentTypeResponse = client.get("$baseUrl/api/content-type-builder/content-types") {
+        val url = "$baseUrl/api/content-type-builder/content-types"
+        val response: ContentTypeResponse = selector.getClientForUrl(url).get(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
             }
@@ -124,7 +171,8 @@ class StrapiClient(
     }
 
     suspend fun getComponentSchema(): List<StrapiComponent> {
-        val response: ComponentResponse = client.get("$baseUrl/api/content-type-builder/components") {
+        val url = "$baseUrl/api/content-type-builder/content-types/components"
+        val response: ComponentResponse = selector.getClientForUrl(url).get(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
             }
@@ -142,7 +190,8 @@ class StrapiClient(
         var currentPage = 1
 
         do {
-            val response: JsonObject = client.get("$baseUrl/upload/files") {
+            val url = "$baseUrl/upload/files"
+            val response: JsonObject = selector.getClientForUrl(url).get("$baseUrl/upload/files") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -171,7 +220,8 @@ class StrapiClient(
     suspend fun getFolders(): List<StrapiFolder> {
 
         val token = getLoginToken().token
-        val response: FolderResponse = client.get("$baseUrl/upload/folders") {
+        val url = "$baseUrl/upload/folders"
+        val response: FolderResponse = selector.getClientForUrl(url).get(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
@@ -209,7 +259,8 @@ class StrapiClient(
      */
     suspend fun createFolder(name: String, parent: Int?): StrapiFolder {
         val token = getLoginToken().token
-        val response = client.post("$baseUrl/upload/folders/") {
+        val url = "$baseUrl/upload/folders"
+        val response = selector.getClientForUrl(url).post(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
                 append(HttpHeaders.ContentType, "application/json")
@@ -240,10 +291,11 @@ class StrapiClient(
         val file = withContext(Dispatchers.IO) {
             File.createTempFile(strapiImage.metadata.name, strapiImage.metadata.ext)
         }
+        val url = strapiImage.metadata.url
 
-        val response = if (strapiImage.metadata.url.startsWith("http"))
-            client.get(strapiImage.metadata.url)
-        else client.get(strapiImage.downloadUrl(baseUrl)) {
+        val response = if (url.startsWith("http"))
+            selector.getClientForUrl(url).get(url)
+        else selector.getClientForUrl(strapiImage.downloadUrl(baseUrl)).get(strapiImage.downloadUrl(baseUrl)) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
             }
@@ -276,7 +328,7 @@ class StrapiClient(
         val url = "$baseUrl/upload" + (id?.let { "?id=$it" } ?: "")
 
         // Esegui la richiesta
-        val response = client.submitFormWithBinaryData(
+        val response = selector.getClientForUrl(url).submitFormWithBinaryData(
             url = url,
             formData = formData {
                 append("files", file.readBytes(), Headers.build {
@@ -315,7 +367,8 @@ class StrapiClient(
      */
     suspend fun deleteFile(fileId: String): JsonObject {
         return try {
-            client.delete("$baseUrl/api/upload/files/$fileId") {
+            val url = "$baseUrl/api/upload/files/$fileId"
+            selector.getClientForUrl(url).delete(url) {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $apiKey")
                 }
@@ -334,8 +387,9 @@ class StrapiClient(
         contentType: StrapiContentType,
         mappings: List<MergeRequestDocumentMapping>?
     ): List<EntryElement> {
+        val url = "$baseUrl/api/${contentType.schema.queryName}"
         val response: JsonObject = try {
-            client.get("$baseUrl/api/${contentType.schema.queryName}") {
+            selector.getClientForUrl(url).get(url) {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $apiKey")
                 }
@@ -386,7 +440,7 @@ class StrapiClient(
                 JsonParser.decodeFromString<JsonObject>(base)
             } ?: entry
             val cleanupStrapiJson = cleanupStrapiJson(mappedEntry)
-            val content = StrapiContent(StrapiContentMetadata(id, documentId), entry,cleanupStrapiJson.jsonObject)
+            val content = StrapiContent(StrapiContentMetadata(id, documentId), entry, cleanupStrapiJson.jsonObject)
 
 
 
@@ -401,7 +455,7 @@ class StrapiClient(
         println("[DEBUG_LOG] Creating content entry for $contentType with kind $kind")
         println("[DEBUG_LOG] Data: $data")
 
-        val response = client.request(url) {
+        val response = selector.getClientForUrl(url).request(url) {
             method = if (kind == StrapiContentTypeKind.SingleType) HttpMethod.Put else HttpMethod.Post
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
@@ -433,7 +487,7 @@ class StrapiClient(
         println("[DEBUG_LOG] Data: $data")
 
 
-        return client.put(url) {
+        return selector.getClientForUrl(url).put(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
                 contentType(io.ktor.http.ContentType.Application.Json)
@@ -451,7 +505,7 @@ class StrapiClient(
             "$baseUrl/api/$contentType/$id"
         }
 
-        return client.delete(url) {
+        return selector.getClientForUrl(url).delete(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
             }
@@ -484,11 +538,11 @@ class StrapiClient(
         return when (element) {
 
             is JsonObject -> {
-                    JsonObject(
-                        element.entries
-                            .filter { (key, value) -> key !in technicalFields && value !is JsonNull && (value !is JsonObject || value.isNotEmpty()) }
-                            .associate { (key, value) -> key to cleanupStrapiJson(value) }
-                    )
+                JsonObject(
+                    element.entries
+                        .filter { (key, value) -> key !in technicalFields && value !is JsonNull && (value !is JsonObject || value.isNotEmpty()) }
+                        .associate { (key, value) -> key to cleanupStrapiJson(value) }
+                )
             }
 
             is JsonArray -> {

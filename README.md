@@ -54,6 +54,9 @@ The application can be configured through environment variables or the `applicat
 - `DATA_FOLDER`: Folder for storing temporary data (default: data)
 - `STRAPI_CLIENT_TIMEOUT`: Timeout for Strapi API requests in milliseconds (default: 30000)
 - `STRAPI_CLIENT_MAX_RETRIES`: Maximum retries for Strapi API requests (default: 3)
+- `HTTP_PROXY`: HTTP proxy configuration (default: none)
+- `HTTPS_PROXY`: HTTPS proxy configuration (default: none)
+- `NO_PROXY`: No proxy configuration (default: none)
 
 ## Building and Running
 
