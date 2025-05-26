@@ -126,6 +126,22 @@ For more information about the Helm chart and its configuration options, see the
 
 ## Development
 
+### Git Hooks Setup
+
+This repository uses Git hooks to automate certain tasks. Specifically, a pre-commit hook is configured to:
+
+1. Package the Helm chart: `helm package charts/strapi-sync-wizard -d charts/`
+2. Update the Helm repository index: `helm repo index charts/ --url https://ivseb.github.io/strapi-sync-wizard/charts`
+3. Automatically add any resulting changes to the Git staging area
+
+The hooks are stored in the `.githooks` directory and are configured using:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+New contributors should ensure this configuration is set up in their local repository.
+
 ### Backend Development
 
 The backend is built with Kotlin and Ktor:
