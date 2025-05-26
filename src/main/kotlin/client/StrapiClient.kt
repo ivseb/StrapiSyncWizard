@@ -17,6 +17,7 @@ import it.sebi.utils.calculateMD5Hash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.System.getenv
 import java.security.MessageDigest
@@ -75,6 +76,8 @@ private fun buildClient(proxyConfig: ProxyConfig?): HttpClient = HttpClient(CIO)
 
 class ClientSelector {
 
+    val log = LoggerFactory.getLogger(this::class.java)
+
     private val clientNoProxy = buildClient(null)
     private val clientHttpsProxy: HttpClient?
     private val clientHttpProxy: HttpClient?
@@ -82,14 +85,19 @@ class ClientSelector {
 
     init {
         val httpProxy = getenv("HTTP_PROXY")
+        log.info("HTTP_PROXY: $httpProxy")
         val httpsProxy = getenv("HTTPS_PROXY")
+        log.info("HTTPS_PROXY: $httpsProxy")
         noProxyList = getenv("NO_PROXY")?.let { noProxyString -> noProxyString.split(",").map { it.trim() } }
+        log.info("NO_PROXY: ${noProxyList?.joinToString(", ") { "\"$it\"" } ?: "null"}")
         clientHttpProxy = if (httpProxy != null) {
+            log.info("Using HTTP proxy $httpProxy")
             buildClient(ProxyBuilder.http(httpProxy))
         } else {
             null
         }
         clientHttpsProxy = if (httpsProxy != null) {
+            log.info("Using HTTPS proxy $httpsProxy")
             buildClient(ProxyBuilder.http(httpsProxy))
         } else {
             null
@@ -97,16 +105,27 @@ class ClientSelector {
     }
 
     fun getClientForUrl(url: String): HttpClient {
+        log.info("Getting client for URL $url")
         val urlObj = try {
             java.net.URL(url)
         } catch (e: Exception) {
             return clientHttpsProxy ?: clientNoProxy
         }
-        val proxy by lazy { if (urlObj.protocol == "https") clientHttpsProxy else clientHttpProxy }
+        val proxy by lazy {
+            if (urlObj.protocol == "https") {
+                log.info("URL $urlObj matches https_proxy list, returning client with proxy ")
+                clientHttpsProxy
+            } else {
+                log.info("URL $urlObj matches http_proxy list, returning client with proxy ")
+                clientHttpProxy
+            }
+        }
 
         return if (noProxyList?.any { urlObj.host.contains(it) } == true) {
+            log.info("URL $urlObj matches no_proxy list, returning client without proxy")
             clientNoProxy
         } else {
+            log.info("URL $urlObj does not match no_proxy list, returning client with proxy ")
             proxy ?: clientNoProxy
         }
     }
