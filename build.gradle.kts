@@ -91,7 +91,7 @@ tasks.register("buildFrontend") {
 }
 
 // Aggiungi la dipendenza al task buildImage
-tasks.named("jibDockerBuild") {
+tasks.named("publishImage") {
     dependsOn("buildFrontend")
 }
 
