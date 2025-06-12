@@ -190,7 +190,7 @@ class StrapiClient(
     }
 
     suspend fun getComponentSchema(): List<StrapiComponent> {
-        val url = "$baseUrl/api/content-type-builder/content-types/components"
+        val url = "$baseUrl/api/content-type-builder/components"
         val response: ComponentResponse = selector.getClientForUrl(url).get(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
