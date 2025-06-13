@@ -402,25 +402,57 @@ class StrapiClient(
     }
 
 
+    /**
+     * Recursively process component parameters
+     * @param parameters The parameters to add to
+     * @param parentPath The parent path for nested parameters
+     * @param componentUid The component UID
+     * @param componentByUid Map of component UIDs to component objects
+     */
+    private fun processComponentParameters(
+        parameters: ParametersBuilder,
+        parentPath: String,
+        componentUid: String?,
+        componentByUid: Map<String, StrapiComponent>
+    ) {
+        if (componentUid == null) return
+
+        val component = componentByUid[componentUid] ?: return
+
+        // Process nested components
+        for ((nestedFieldName, nestedAttribute) in component.schema.attributes) {
+            if (nestedAttribute.type == "component") {
+                // Add parameter for this nested component
+                val nestedPath = "$parentPath[$nestedFieldName]"
+                println("[DEBUG_LOG] Adding nested parameter for $nestedPath")
+                parameters.append("populate$nestedPath[populate]", "*")
+
+                // Recursively process nested component
+                processComponentParameters(
+                    parameters,
+                    "$nestedPath",
+                    nestedAttribute.component,
+                    componentByUid
+                )
+            }
+        }
+    }
+
     suspend fun getContentEntries(
         contentType: StrapiContentType,
         mappings: List<MergeRequestDocumentMapping>?
     ): List<EntryElement> {
-        val url = "$baseUrl/api/${contentType.schema.queryName}"
+        val url = "$baseUrl/content-manager/${contentType.schema.kebabCaseKind}/${contentType.uid}?locate=it"
+
+        // Get component schemas
+//        val components = getComponentSchema()
+//        val componentByUid = components.associateBy { it.uid }
+        val token = getLoginToken().token
+
         val response: JsonObject = try {
             selector.getClientForUrl(url).get(url) {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer $apiKey")
-                }
-                url {
-                    contentType.schema.attributes.forEach { (key, attribute) ->
-                        when (attribute.type) {
-                            "component", "dynamiczone", "media", "relation" -> {
-                                println("[DEBUG_LOG] Adding parameter for $key")
-                                parameters.append("populate[$key][populate]", "*")
-                            }
-                        }
-                    }
+                    append(HttpHeaders.Authorization, "Bearer ${token}")
                 }
             }.body()
         } catch (e: io.ktor.client.plugins.ClientRequestException) {
@@ -429,6 +461,41 @@ class StrapiClient(
             }
             throw e
         }
+
+//        val response: JsonObject = try {
+//            selector.getClientForUrl(url).get(url) {
+//                headers {
+//                    append(HttpHeaders.Authorization, "Bearer $apiKey")
+//                }
+//                url {
+//                    contentType.schema.attributes.forEach { (key, attribute) ->
+//                        when (attribute.type) {
+//                            "component" -> {
+//                                println("[DEBUG_LOG] Adding parameter for $key")
+//                                parameters.append("populate[$key][populate]", "*")
+//
+//                                // Process nested components
+//                                processComponentParameters(
+//                                    parameters,
+//                                    "[$key]",
+//                                    attribute.component,
+//                                    componentByUid
+//                                )
+//                            }
+//                            "dynamiczone", "media", "relation" -> {
+//                                println("[DEBUG_LOG] Adding parameter for $key")
+//                                parameters.append("populate[$key][populate]", "*")
+//                            }
+//                        }
+//                    }
+//                }
+//            }.body()
+//        } catch (e: io.ktor.client.plugins.ClientRequestException) {
+//            if (e.response.status == HttpStatusCode.NotFound) {
+//                return emptyList()
+//            }
+//            throw e
+//        }
 
 
         val dataElement = response["data"]
@@ -551,7 +618,9 @@ class StrapiClient(
             "previewUrl",
             "path",
             "sizeInBytes",
-            "__component"
+            "__component",
+            "createdBy",
+            "updatedBy"
         )
 
         return when (element) {

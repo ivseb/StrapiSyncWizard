@@ -1211,6 +1211,10 @@ class MergeRequestService(
         result.remove("createdAt")
         result.remove("updatedAt")
         result.remove("publishedAt")
+        result.remove("createdBy")
+        result.remove("updatedBy")
+        result.remove("status")
+        result.remove("localizations")
 
 
         // Process relationships at the first level

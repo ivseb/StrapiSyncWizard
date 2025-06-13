@@ -1218,6 +1218,51 @@ class SyncService(private val mergeRequestDocumentMappingRepository: MergeReques
 
 
     /**
+     * Recursively process component relationships
+     * @param relationships The list of relationships to add to
+     * @param sourceContentType The source content type UID
+     * @param sourceField The source field name
+     * @param componentUid The component UID
+     * @param componentByUid Map of component UIDs to component objects
+     */
+    private fun processComponentRelationships(
+        relationships: MutableList<ContentRelationship>,
+        sourceContentType: String,
+        sourceField: String,
+        componentUid: String?,
+        componentByUid: Map<String, StrapiComponent>
+    ) {
+        if (componentUid == null) return
+
+        val component = componentByUid[componentUid] ?: return
+
+        // Add relationship for this component
+        relationships.add(
+            ContentRelationship(
+                sourceContentType = sourceContentType,
+                sourceField = sourceField,
+                targetContentType = component.schema.collectionName,
+                relationType = "component",
+                isBidirectional = false
+            )
+        )
+
+        // Process nested components
+        for ((nestedFieldName, nestedAttribute) in component.schema.attributes) {
+            if (nestedAttribute.type == "component") {
+                // Recursively process nested component
+                processComponentRelationships(
+                    relationships,
+                    component.schema.collectionName, // Now the component becomes the source
+                    nestedFieldName,
+                    nestedAttribute.component,
+                    componentByUid
+                )
+            }
+        }
+    }
+
+    /**
      * Build a comprehensive relationship graph for content types
      * @return List of ContentRelationship objects
      */
@@ -1227,6 +1272,7 @@ class SyncService(private val mergeRequestDocumentMappingRepository: MergeReques
     ): List<ContentRelationship> {
         val relationships = mutableListOf<ContentRelationship>()
         val contentTypeByUid = contentTypes.associateBy { it.uid }
+        val componentByUid = components.associateBy { it.uid }
 
         // First pass: identify all relationships
         for (contentType in contentTypes) {
@@ -1245,18 +1291,14 @@ class SyncService(private val mergeRequestDocumentMappingRepository: MergeReques
                         )
                     }
                 } else if (attribute.type == "component") {
-
-                    components.find { it.uid == attribute.component }?.let { component ->
-                        relationships.add(
-                            ContentRelationship(
-                                sourceContentType = contentType.uid,
-                                sourceField = fieldName,
-                                targetContentType = component.schema.collectionName,
-                                relationType = "component",
-                                isBidirectional = false
-                            )
-                        )
-                    }
+                    // Process component and its nested components
+                    processComponentRelationships(
+                        relationships,
+                        contentType.uid,
+                        fieldName,
+                        attribute.component,
+                        componentByUid
+                    )
                 } else if (attribute.type == "media") {
                     // Add relationship to files for media attributes
                     relationships.add(

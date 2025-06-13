@@ -56,6 +56,9 @@ enum class StrapiContentTypeKind(val value: String) {
     CollectionType("collectionType")
 }
 
+
+
+
 @Serializable
 data class Schema(
     val draftAndPublish: Boolean,
@@ -76,6 +79,16 @@ data class Schema(
         }
         StrapiContentTypeKind.CollectionType -> {
             pluralName
+
+        }
+    }
+
+    val kebabCaseKind =  when (kind) {
+        StrapiContentTypeKind.SingleType -> {
+            "single-types"
+        }
+        StrapiContentTypeKind.CollectionType -> {
+            "collection-types"
 
         }
     }
